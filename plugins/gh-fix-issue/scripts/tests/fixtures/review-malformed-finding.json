@@ -1,0 +1,11 @@
+{
+  "job": { "id": "job-6", "status": "completed" },
+  "storedJob": {
+    "result": {
+      "verdict": "needs-attention",
+      "summary": "finding の要素が不正な形をしています。",
+      "findings": [null],
+      "next_steps": []
+    }
+  }
+}

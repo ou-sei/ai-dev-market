@@ -1,0 +1,20 @@
+{
+  "data": {
+    "repository": {
+      "issue": {
+        "projectItems": {
+          "nodes": [
+            {
+              "id": "PVTI_androidissues_item",
+              "project": { "id": "PVT_androidissues", "title": "Android Issues" }
+            },
+            {
+              "id": "PVTI_mobileissues_item",
+              "project": { "id": "PVT_mobileissues", "title": "Mobile Issues" }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

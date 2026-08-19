@@ -1,0 +1,24 @@
+{
+  "name": "ai-dev-market",
+  "owner": { "name": "ou-sei" },
+  "metadata": {
+    "description": "Codex や Claude など AI を活用して、エンジニアの日常開発を支援するツール・プラグイン集。",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "gh-fix-issue",
+      "description": "GitHub Issue 番号 1 つで、Issue 取得 → 実装 → セルフレビュー → Codex レビュー → ゲート → PR 作成 までを通す。",
+      "version": "0.1.0",
+      "author": { "name": "ou-sei" },
+      "source": "./plugins/gh-fix-issue"
+    },
+    {
+      "name": "gh-fix-review",
+      "description": "GitHub PR の Review comment を取得し、妥当性を判断して対応・push したうえで、各スレッドに必ずインライン返信する。",
+      "version": "0.1.0",
+      "author": { "name": "ou-sei" },
+      "source": "./plugins/gh-fix-review"
+    }
+  ]
+}

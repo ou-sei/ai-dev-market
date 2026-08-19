@@ -1,0 +1,8 @@
+diff --git a/app/src/main/kotlin/com/example/app/Changed.kt b/app/src/main/kotlin/com/example/app/Changed.kt
+--- a/app/src/main/kotlin/com/example/app/Changed.kt
++++ b/app/src/main/kotlin/com/example/app/Changed.kt
+@@ -30,0 +30,4 @@
++    val e = 1
++    val f = 2
++    val g = 3
++    val h = 4

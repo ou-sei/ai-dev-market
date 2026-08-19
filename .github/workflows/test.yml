@@ -1,0 +1,59 @@
+name: test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # check-version-bump.sh が base との差分を見るため履歴が必要
+          fetch-depth: 0
+
+      # プラグインごとのテストを決め打ちせず発見して実行する。
+      # ツールが増えるたびに CI を直す必要をなくすため（docs/plugin-distribution.md §7）。
+      # テストは git リポジトリの中で動くことを前提にしている
+      # （設定ローダーが git rev-parse でリポジトリルートを解決するため）。
+      - name: Run plugin tests
+        run: |
+          status=0
+          found=0
+          while IFS= read -r t; do
+            found=$((found + 1))
+            echo "== $t"
+            bash "$t" || status=1
+          done < <(find plugins -path '*/tests/run-tests.sh' | sort)
+          if [ "$found" -eq 0 ]; then
+            echo "テストが 1 つも見つかりませんでした。発見の条件が壊れている可能性があります。" >&2
+            exit 1
+          fi
+          echo
+          echo "実行したテストスイート: $found"
+          exit $status
+
+      # marketplace.json と plugins/ の対応。登録漏れは「配布されないまま緑で通る」
+      # 形で表面化するので機械的に見る。
+      - name: Check manifests
+        run: python3 tests/check-manifests.py
+
+      - name: Test check-manifests.py itself
+        run: bash tests/test-check-manifests.sh
+
+      # 配布は main へのマージで起きるため、変更したのに version が据え置きなら落とす。
+      - name: Check version bumped
+        if: github.event_name == 'pull_request'
+        run: bash tests/check-version-bump.sh "${{ github.event.pull_request.base.sha }}"
+
+      - name: Shell syntax check
+        run: |
+          status=0
+          while IFS= read -r f; do
+            bash -n "$f" || status=1
+          done < <(find . -name '*.sh' -not -path './.git/*')
+          exit $status

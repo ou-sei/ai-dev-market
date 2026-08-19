@@ -1,0 +1,11 @@
+{
+  "job": { "id": "job-1", "status": "completed" },
+  "storedJob": {
+    "result": {
+      "verdict": "approve",
+      "summary": "問題は見つかりませんでした。",
+      "findings": [],
+      "next_steps": []
+    }
+  }
+}

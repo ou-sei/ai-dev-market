@@ -1,0 +1,22 @@
+{
+  "job": { "id": "job-5", "status": "completed" },
+  "storedJob": {
+    "result": {
+      "verdict": "needs-attention",
+      "summary": "severity が既知集合外の finding が1件あります。",
+      "findings": [
+        {
+          "severity": "blocker",
+          "title": "不正な severity",
+          "body": "severity が critical/high/medium/low のいずれでもありません。",
+          "file": "app/src/main/kotlin/com/example/app/Sample.kt",
+          "line_start": 5,
+          "line_end": 5,
+          "confidence": 0.5,
+          "recommendation": "severity を見直してください。"
+        }
+      ],
+      "next_steps": []
+    }
+  }
+}

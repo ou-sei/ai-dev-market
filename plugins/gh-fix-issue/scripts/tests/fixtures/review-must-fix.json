@@ -1,0 +1,32 @@
+{
+  "job": { "id": "job-2", "status": "completed" },
+  "storedJob": {
+    "result": {
+      "verdict": "needs-attention",
+      "summary": "null 安全性の問題が 1 件あります。",
+      "findings": [
+        {
+          "severity": "high",
+          "title": "Apollo 生成型への非 null 前提アクセス",
+          "body": "community が null の場合に落ちます。",
+          "file": "app/src/main/kotlin/com/example/app/Sample.kt",
+          "line_start": 42,
+          "line_end": 42,
+          "confidence": 0.9,
+          "recommendation": "?. で分岐してください。"
+        },
+        {
+          "severity": "low",
+          "title": "変数名が曖昧",
+          "body": "tmp より意味のある名前が良いです。",
+          "file": "app/src/main/kotlin/com/example/app/Sample.kt",
+          "line_start": 10,
+          "line_end": 10,
+          "confidence": 0.4,
+          "recommendation": "改名を検討してください。"
+        }
+      ],
+      "next_steps": ["null 分岐を追加する"]
+    }
+  }
+}

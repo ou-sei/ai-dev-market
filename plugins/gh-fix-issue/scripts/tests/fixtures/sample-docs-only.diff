@@ -1,0 +1,6 @@
+diff --git a/docs/README.md b/docs/README.md
+--- a/docs/README.md
++++ b/docs/README.md
+@@ -1,0 +2,2 @@
++foo
++bar

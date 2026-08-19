@@ -1,0 +1,8 @@
+{
+  "name": "gh-fix-review",
+  "version": "0.1.0",
+  "description": "GitHub PR の Review comment に対応し、各スレッドへ必ずインライン返信する。",
+  "author": {
+    "name": "ou-sei"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "job": { "id": "job-3" },
+  "storedJob": {
+    "payload": {
+      "codex": { "status": "completed" },
+      "result": {
+        "verdict": "needs-attention",
+        "summary": "軽微な指摘のみです。",
+        "findings": [
+          {
+            "severity": "medium",
+            "title": "重複したロジック",
+            "body": "同じ変換が 2 箇所にあります。",
+            "file": "app/src/main/kotlin/com/example/app/Sample.kt",
+            "line_start": 55,
+            "line_end": 60,
+            "confidence": 0.6,
+            "recommendation": "共通化を検討してください。"
+          }
+        ],
+        "next_steps": []
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "data": {
+    "node": {
+      "fields": {
+        "nodes": [
+          {},
+          {},
+          {
+            "id": "PVTSSF_status",
+            "name": "Status",
+            "options": [
+              { "id": "opt_new", "name": "🆕 New" },
+              { "id": "opt_backlog", "name": "📋 Backlog" },
+              { "id": "opt_inprogress", "name": "🏗 In progress" },
+              { "id": "opt_inreview", "name": "👀 In review" },
+              { "id": "opt_reviewed", "name": "💮 Reviewed" },
+              { "id": "opt_done", "name": "✅ Done" }
+            ]
+          },
+          {}
+        ]
+      }
+    }
+  }
+}

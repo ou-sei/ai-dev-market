@@ -1,6 +1,6 @@
 # ai-dev-market
 
-[日本語](README.md) | [English](README.en.md) | 简体中文
+[English](README.md) | [日本語](README_ja.md) | 简体中文
 
 **利用 Codex、Claude、Gemini、Grok 等 AI，为工程师的日常开发提供实用工具与插件的
 marketplace。** 不绑定任何特定的 AI 工具，支持范围今后会持续扩大。目前的分发形式是

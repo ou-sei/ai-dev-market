@@ -1,47 +1,49 @@
 # ai-dev-market
 
-日本語 | [English](README.en.md) | [简体中文](README.zh-CN.md)
+English | [日本語](README_ja.md) | [简体中文](README.zh-CN.md)
 
-**Codex や Claude、Gemini、Grokなど AI を活用して、エンジニアの日常開発に役立つツール・
-プラグインを提供するマーケットプレイス。** 特定の AI ツール専用にはせず、対応先は
-今後も増やしていく。現時点の配布形態は Claude Code プラグイン（コマンドとスキル）。
+**A marketplace of tools and plugins that leverage AI — Codex, Claude, Gemini, Grok, and more —
+to help engineers with their day-to-day development.** It is not tied to any single AI tool,
+and the list of supported ones will keep growing. The current distribution format is
+Claude Code plugins (commands and skills).
 
-## 何が入っているか
+## What's inside
 
-| ツール | 内容 |
+| Tool | Description |
 |---|---|
-| `gh-fix-issue` | GitHub Issue 番号 1 つで、Issue 取得 → 実装 → セルフレビュー → Codex レビュー → ゲート → PR 作成 までを通す |
-| `gh-fix-review` | GitHub PR の Review comment を取得し、各指摘の妥当性を判断 → 対応 → ゲート → push → **各スレッドへ必ずインライン返信**する |
+| `gh-fix-issue` | From a single GitHub Issue number, runs the whole flow: fetch the Issue → implement → self-review → Codex review → gates → create the PR |
+| `gh-fix-review` | Fetches PR review comments, judges the validity of each → fixes → gates → push → **always replies inline to every thread** |
 
-`gh-fix-issue` は Issue から PR を作る側、`gh-fix-review` は既にある PR の
-レビュー指摘に対応する側。**それぞれ単独で導入して使える。**
+`gh-fix-issue` creates a PR from an Issue; `gh-fix-review` handles review feedback on an
+existing PR. **Each can be installed and used on its own.**
 
-## どの AI が何をするか
+## Which AI does what
 
-**実装者とレビュアーを別の AI に分ける**のがこのツール群の核。
+The core idea of these tools is to **separate the implementer and the reviewer into
+different AIs**.
 
-| 段階 | 担当 |
+| Stage | Actor |
 |---|---|
-| Issue 取得・実装・セルフレビュー・コミット・PR 作成・指摘対応 | **Claude Code**（コマンド / スキルを実行している本体） |
-| 敵対的レビュー（`gh-fix-issue` のレビューループ） | **Codex**（独立した二次意見。実装した AI 自身のセルフレビューだけで通さない） |
-| ゲート（ビルド・テスト・lint）とスレッド返信の実行 | **素のシェルスクリプト**（AI ではなく決定的。終了コードだけで判定する） |
+| Fetching the Issue, implementation, self-review, commits, PR creation, addressing feedback | **Claude Code** (the host running the command / skill) |
+| Adversarial review (the review loop of `gh-fix-issue`) | **Codex** (an independent second opinion — the implementing AI's self-review alone is never enough to pass) |
+| Gates (build / test / lint) and posting thread replies | **Plain shell scripts** (deterministic, not AI; judged by exit codes only) |
 
-## 前提条件
+## Prerequisites
 
-いずれも**ローカルで実行する**ツール。事前に次を用意する。
+Both tools **run locally**. Prepare the following in advance.
 
-| 前提 | `gh-fix-issue` | `gh-fix-review` |
+| Prerequisite | `gh-fix-issue` | `gh-fix-review` |
 |---|---|---|
-| Claude Code（実行ホスト） | 必須 | 必須 |
-| `gh` CLI（`gh auth login` 済み） | 必須 | 必須 |
-| Codex CLI + `openai-codex/codex` プラグイン | **必須** | 不要 |
-| node | lint ゲートを使う場合のみ | 不要 |
+| Claude Code (the host) | Required | Required |
+| `gh` CLI (after `gh auth login`) | Required | Required |
+| Codex CLI + the `openai-codex/codex` plugin | **Required** | Not needed |
+| node | Only if you use the lint gate | Not needed |
 
-`gh-fix-issue` は開始時に Codex の疎通を確認し、使えなければ**停止して
-`/codex:setup` を案内する**（動かしてから気づく事故は起きない）。
-`gh-fix-review` は Codex を一切使わない。
+`gh-fix-issue` verifies Codex connectivity at startup and, if unavailable, **stops and
+points you to `/codex:setup`** (so you never find out mid-run). `gh-fix-review` does not
+use Codex at all.
 
-## 導入
+## Installation
 
 ```bash
 claude plugin marketplace add ou-sei/ai-dev-market
@@ -49,35 +51,35 @@ claude plugin install gh-fix-issue@ai-dev-market
 claude plugin install gh-fix-review@ai-dev-market
 ```
 
-private リポジトリのままで動く。`marketplace add` の実体は `git clone` なので、
-このリポジトリへの git 認証があれば読める。
+Works with the repository kept private. `marketplace add` is effectively a `git clone`,
+so anyone with git authentication for this repository can read it.
 
-**まとめて入れる仕組みは無い。** プラグインが他のプラグインへの依存を宣言する
-仕組みが無いため、必要なものを 1 つずつ指定する。
+**There is no bulk-install mechanism.** Plugins cannot declare dependencies on other
+plugins, so install the ones you need one by one.
 
-### 更新
+### Updating
 
-**2 段構えで、最後に再起動が必要。**
+**Two steps, then a restart.**
 
 ```bash
-claude plugin marketplace update ai-dev-market          # marketplace の情報を取り直す
-claude plugin update gh-fix-issue@ai-dev-market          # プラグイン本体を更新する
+claude plugin marketplace update ai-dev-market          # refresh the marketplace info
+claude plugin update gh-fix-issue@ai-dev-market         # update the plugin itself
 claude plugin update gh-fix-review@ai-dev-market
 ```
 
-`marketplace update` だけではプラグイン本体は更新されない（`install` は
-`already installed` と言って何もしない）。`plugin update` には
-`<名前>@<marketplace>` の形が必要で、名前だけだと `Plugin not found` になる。
-更新後は **Claude Code の再起動**で反映される。
+`marketplace update` alone does not update the plugins themselves (`install` just says
+`already installed` and does nothing). `plugin update` requires the `<name>@<marketplace>`
+form; the name alone yields `Plugin not found`. Updates take effect after
+**restarting Claude Code**.
 
-`claude plugin install` にバージョン指定の構文は無い。利用者は常に
-marketplace が指すバージョンを取る。詳細は `docs/plugin-distribution.md` §6。
+`claude plugin install` has no syntax for pinning a version. Users always get whatever
+version the marketplace points to. See `docs/plugin-distribution.md` §6 for details.
 
-## 構成
+## Layout
 
 ```
 ai-dev-market/
-├── .claude-plugin/marketplace.json     プラグイン一覧
+├── .claude-plugin/marketplace.json     plugin catalog
 ├── plugins/
 │   ├── gh-fix-issue/
 │   │   ├── .claude-plugin/plugin.json
@@ -86,60 +88,63 @@ ai-dev-market/
 │   │                                   gh-project-status / gh-fix-issue-config / tests
 │   └── gh-fix-review/
 │       ├── .claude-plugin/plugin.json
-│       └── skills/gh-fix-review/     SKILL.md / pr-reply.sh / threads.jq / tests
-├── tests/                              リポジトリ全体の整合を見る検証
+│       └── skills/gh-fix-review/       SKILL.md / pr-reply.sh / threads.jq / tests
+├── tests/                              repository-wide consistency checks
 └── docs/
     ├── gh-fix-issue.md
     ├── gh-fix-review.md
-    └── plugin-distribution.md          配布方式の設計。新しいツールの追加手順もここ
+    └── plugin-distribution.md          distribution design; how to add a new tool
 ```
 
-**プラグインは他のプラグインを参照しない。** 片方だけ入れた人が壊れないようにするため。
+**Plugins never reference each other**, so installing only one never breaks anything.
 
-同梱ファイルの参照には `${CLAUDE_PLUGIN_ROOT}` を使う。`~/.claude/...` の絶対パスは
-プラグイン化すると存在しない。
+Bundled files are referenced via `${CLAUDE_PLUGIN_ROOT}`. Absolute paths under
+`~/.claude/...` do not exist once packaged as a plugin.
 
-## 利用リポジトリ側に必要なもの
+## What a consuming repository needs
 
-リポジトリ側の準備は**すべて任意**。push 前の検証を上書きしたい場合だけ、
-プラグインごとに独立したファイルを置く（片方の設定がもう片方の動作を変えないため）。
+Everything on the repository side is **optional**. Only when you want to override the
+pre-push verification, place one file per plugin (so one plugin's setting never changes
+the other plugin's behavior).
 
-| プラグイン | 上書きファイル | 無い場合の既定 |
+| Plugin | Override file | Default when absent |
 |---|---|---|
-| `gh-fix-issue` | `.claude/gh-fix-issue.gates.sh` | `.claude/gh-fix-issue.config.sh` のゲート定義（無ければゲート無し） |
-| `gh-fix-review` | `.claude/gh-fix-review.gates.sh` | プロジェクト形式を自動検出（`gradlew test` / `npm test` など） |
+| `gh-fix-issue` | `.claude/gh-fix-issue.gates.sh` | Gates defined in `.claude/gh-fix-issue.config.sh` (no gates if that is absent either) |
+| `gh-fix-review` | `.claude/gh-fix-review.gates.sh` | Auto-detects the project type (`gradlew test` / `npm test`, etc.) |
 
-上書きファイルの終了コードの契約は共通。
+Override files share a common exit-code contract:
 
-| exit | 意味 |
+| exit | Meaning |
 |---|---|
-| 0 | 合格 |
-| 10 | 不合格。直して再実行 |
-| 1 | ゲートの実行基盤の問題。直して再実行せず停止 |
+| 0 | Pass |
+| 10 | Fail. Fix and re-run |
+| 1 | Problem in the gate infrastructure itself. Stop; not a fix-and-re-run case |
 
-上書きファイルは**どのプラグインにも依存させない**。プラグインのキャッシュを辿る
-ラッパーにすると、片方しか入れていない人が壊れる。
+Override files must **not depend on any plugin**. A wrapper that digs into a plugin's
+cache breaks users who installed only one of the plugins.
 
-`gh-fix-issue` / `gh-fix-review` とも、実際の Android リポジトリで実地検証済み。
+Both `gh-fix-issue` and `gh-fix-review` have been field-tested on a real Android repository.
 
-## 新しいツールを追加する
+## Adding a new tool
 
-`docs/plugin-distribution.md` §8 の手順に従う。`plugins/` にディレクトリを作り、
-`marketplace.json` に登録する。**登録を忘れると誰にも配布されない**ので CI が対応を検証する。
+Follow the steps in `docs/plugin-distribution.md` §8: create a directory under `plugins/`
+and register it in `marketplace.json`. **An unregistered tool is distributed to nobody**,
+so CI verifies the mapping.
 
-## 開発
+## Development
 
-ローカルの作業ツリーをそのままマーケットプレイスとして追加できる。
+A local working tree can be added directly as a marketplace.
 
 ```bash
 claude plugin marketplace add /path/to/ai-dev-market
 ```
 
-テストは CI が `plugins/**/tests/run-tests.sh` を発見して実行する。手元で回すには
-そのパスを直接叩く。
+CI discovers and runs every `plugins/**/tests/run-tests.sh`. To run them locally,
+execute those paths directly.
 
-manifest の整合は `python3 tests/check-manifests.py` で見る。組み込みの
-`claude plugin validate` も使えるが、**`plugins/` にあるのに `marketplace.json` に
-未登録のディレクトリを検出しない**（実測で確認）。この登録漏れが一番気づけない
-失敗なので、自前の検証を CI に置いている。`claude` CLI は GitHub runner に無いため
-CI では組み込みコマンドを使えない、という理由もある。
+Manifest consistency is checked with `python3 tests/check-manifests.py`. The built-in
+`claude plugin validate` also works, but it **does not detect a directory that exists
+under `plugins/` yet is missing from `marketplace.json`** (verified empirically). That
+omission is the hardest failure to notice, which is why the custom check lives in CI —
+and the `claude` CLI is not available on GitHub runners anyway, so CI cannot use the
+built-in command.

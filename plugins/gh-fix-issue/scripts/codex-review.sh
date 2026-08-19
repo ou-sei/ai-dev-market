@@ -19,7 +19,7 @@
 # --discuss は 10 を返さない。指摘を採るか採らないかの判断は呼び出し側（Claude）の仕事で、
 # ここでは Codex の見解を取得できたかどうかだけを返す。
 #
-# 環境変数（詳細は .claude/scripts/README.md）:
+# 環境変数（詳細は .claude/scripts/README_ja.md）:
 #   CODEX_COMPANION            codex-companion.mjs のパスを固定する
 #   GH_FIX_ISSUE_FINDINGS_DIR   findings の保存先を変える
 #   CODEX_REVIEW_FIXTURE       テスト専用。Codex を呼ばず固定 JSON を判定結果に使う

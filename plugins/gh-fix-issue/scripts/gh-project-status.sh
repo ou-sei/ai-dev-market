@@ -22,7 +22,7 @@
 # "null"/全桁数字を JSON の型へ変換するため、8桁hex の option ID がたまたま全数字だと
 # String! に Int が渡って mutation が型エラーで落ちる。Int! の number だけ -F を使う。
 #
-# 環境変数（詳細は .claude/scripts/README.md）:
+# 環境変数（詳細は .claude/scripts/README_ja.md）:
 #   GH_PROJECT_ITEMS_FIXTURE   テスト専用。projectItems クエリの応答を差し替える
 #                              （設定時はスコープ確認と mutation も行わない）
 #   GH_PROJECT_FIELDS_FIXTURE  テスト専用。fields クエリの応答を差し替える

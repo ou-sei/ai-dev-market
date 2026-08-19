@@ -8,7 +8,7 @@
 #   exit 1 は「ゲートの実行基盤自体が失敗した」= 結果全体が信用できない状態であり、
 #   exit 10（不合格。直して再実行する）とは区別する。
 #
-# 環境変数（詳細は .claude/scripts/README.md）:
+# 環境変数（詳細は .claude/scripts/README_ja.md）:
 #   PREFLIGHT_GRADLE             gradlew の代わりに使うコマンド
 #   PREFLIGHT_SKIP_KTLINT        テスト専用。ktlint ゲートを丸ごと飛ばす
 #   PREFLIGHT_KTLINT_REPORT_DIR  ktlint レポートの探索先を変える

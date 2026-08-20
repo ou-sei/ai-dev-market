@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# /gh-fix-issue のリポジトリ固有設定の雛形。
+#
+# 使い方（リポジトリルートで）:
+#   cp "$GH_FIX_ISSUE_PRESET_DIR/gh-fix-issue.config.sh.example" .claude/gh-fix-issue.config.sh
+#
+# このファイルはプラグイン側にある雛形なので、コピー先を編集する。
+# 置き場所は必ず <リポジトリルート>/.claude/gh-fix-issue.config.sh。
+#
+# 全部埋める必要はない。空にした項目はその機能自体を行わない（ゲート無し・
+# Projects 更新なし、など）。**ただしゲートを空にすると、ビルドもテストも
+# 一度も走らないまま PR まで進む。** 実行されていないことを PR に書けるよう、
+# preflight-gates.sh は警告を出すが、警告は失敗ではない。
+#
+# Gradle / Android のリポジトリなら、個別に書くよりプリセットを読むほうが短い:
+#
+#   . "$GH_FIX_ISSUE_PRESET_DIR/android-gradle.sh"
+#   GH_FIX_ISSUE_BASE_BRANCH="develop"      # プリセットの後に差分だけ上書きする
+#
+# shellcheck disable=SC2034
+
+# ---- ブランチ ----------------------------------------------------------------
+
+# PR の向き先。**未設定なら refs/remotes/origin/HEAD → gh repo view の順に
+# 解決される**ので、既定ブランチをそのまま使うなら書かなくてよい。
+# 既定ブランチと PR の向き先が違う運用（既定は master だが PR は develop へ、など）
+# のときだけ明示する。
+# GH_FIX_ISSUE_BASE_BRANCH="develop"
+
+# 作業ブランチ名。{issue} が Issue 番号に置き換わる。
+GH_FIX_ISSUE_BRANCH_TEMPLATE="feature/fix_{issue}"
+
+# ---- ビルドとテスト ----------------------------------------------------------
+
+# ゲートを実行するディレクトリ。リポジトリルートからの相対パス。
+# Git ルートとビルドルートが違う構成（モノレポ、サブディレクトリに Gradle など）
+# では、ここでビルドルートを指す。
+GH_FIX_ISSUE_BUILD_DIR="."
+
+# ゲートは "表示名<TAB>コマンド" を 1 行 1 件で持つ。GH_FIX_ISSUE_BUILD_DIR で評価される。
+# 空にするとビルド・テストのゲートを行わない（= 未検証で PR まで進む）。
+#
+# タブ区切りなので printf で書く。エディタがタブを空白に変換する設定だと壊れる。
+GH_FIX_ISSUE_GATES="$(printf 'build\tmake build\ntest\tmake test')"
+
+# ---- lint --------------------------------------------------------------------
+
+# lint ゲート。空なら lint ゲート自体を行わない。
+GH_FIX_ISSUE_LINT_NAME=""
+GH_FIX_ISSUE_LINT_CMD=""
+
+# 「この PR の追加行の違反だけ」を判定する場合に使う。既存違反が大量にある
+# リポジトリでは、レポート全体を見ると常に不合格になるため。
+# CHECKSTYLE 形式の XML を出力する lint のみ対応する。
+# GH_FIX_ISSUE_BUILD_DIR からの相対パス。
+GH_FIX_ISSUE_LINT_REPORT_DIR=""
+GH_FIX_ISSUE_LINT_DIFF_ENABLED=""
+
+# ---- GitHub Projects ---------------------------------------------------------
+
+# Projects (v2) の名前と Status の値。空なら Projects の更新を一切行わない。
+# 値は Projects の UI に表示されている文字列と完全一致させる（絵文字を含む場合は絵文字も）。
+# 更新には `gh auth refresh -h github.com -s project` が必要。
+GH_FIX_ISSUE_ISSUE_PROJECT=""
+GH_FIX_ISSUE_PR_PROJECT=""
+GH_FIX_ISSUE_STATUS_START=""
+GH_FIX_ISSUE_STATUS_REVIEWED=""
+GH_FIX_ISSUE_STATUS_PR=""
+
+# ---- Codex レビュー ----------------------------------------------------------
+
+# レビュー基準として Codex に渡すファイル。リポジトリルートからの相対パス。
+GH_FIX_ISSUE_FOCUS_FILE=""
+
+# Codex に読ませる規約ファイル（空白区切り）。
+GH_FIX_ISSUE_REVIEW_DOCS=""

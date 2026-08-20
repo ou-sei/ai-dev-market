@@ -9,7 +9,7 @@ cat > "$PREFLIGHT_FIXTURE_REPO/.claude/gh-fix-issue.config.sh" <<'FIXTURE_CONFIG
 # shellcheck disable=SC2034
 GH_FIX_ISSUE_BASE_BRANCH="develop"
 GH_FIX_ISSUE_BUILD_DIR="."
-GH_FIX_ISSUE_GATES="$(printf 'assembleQaDebug\t"${PREFLIGHT_GRADLE:-./gradlew}" assembleQaDebug\ntestqaReleaseUnitTest\t"${PREFLIGHT_GRADLE:-./gradlew}" testqaReleaseUnitTest')"
+GH_FIX_ISSUE_GATES="$(printf 'assembleDemoDebug\t"${PREFLIGHT_GRADLE:-./gradlew}" assembleDemoDebug\ntestDemoReleaseUnitTest\t"${PREFLIGHT_GRADLE:-./gradlew}" testDemoReleaseUnitTest')"
 GH_FIX_ISSUE_LINT_NAME="ktlintCheck"
 GH_FIX_ISSUE_LINT_CMD='"${PREFLIGHT_GRADLE:-./gradlew}" ktlintCheck'
 GH_FIX_ISSUE_LINT_REPORT_DIR="app/build/reports/ktlint"
@@ -49,7 +49,7 @@ assert_eq "10" "$?" "ビルドが失敗すれば 10"
 
 out="$(PREFLIGHT_GRADLE="$fake_ng" PREFLIGHT_SKIP_KTLINT=1 \
   bash "$SCRIPTS_DIR/preflight-gates.sh" --base develop 2>&1)"
-assert_contains "$out" "assembleQaDebug" "失敗したゲート名を出力する"
+assert_contains "$out" "assembleDemoDebug" "失敗したゲート名を出力する"
 
 # --- Fix Round 1 / Finding 2 回帰: --base の不正な引数は develop に黙ってフォールバックせず exit 1 ---
 

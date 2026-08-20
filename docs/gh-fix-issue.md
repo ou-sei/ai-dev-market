@@ -87,7 +87,14 @@ base ブランチ・ビルドコマンド・Projects 名は各リポジトリの
 `.claude/gh-fix-issue.config.sh` から読む。コマンド本体とスクリプトは
 どのリポジトリからも同じものを使う。
 
-設定が無いリポジトリでは既定値（base=`main`、ゲート無し、Projects 更新なし）で動く。
+設定が無いリポジトリでは、ゲート無し・Projects 更新なしで動く（**ビルドもテストも走らない**）。
+`base` は決め打ちしない。`refs/remotes/origin/HEAD` → `gh repo view` の順で既定ブランチを
+解決し、どちらからも取れなければ空にして呼び出し側を失敗させる。既定ブランチが `develop` の
+リポジトリで `main` を base として扱うと、差分の基準がずれたまま lint 判定が通るため。
+
+雛形は `plugins/gh-fix-issue/presets/gh-fix-issue.config.sh.example`。Gradle / Android なら
+`presets/android-gradle.sh` を読み込んで差分だけ上書きできる。プリセットの場所は
+設定ファイルから `$GH_FIX_ISSUE_PRESET_DIR` で参照する。
 **この場合ビルドもテストも走らない**ので、ステップ 0 で設定の有無を必ず提示する。
 
 ### 判定はすべて終了コードで行う

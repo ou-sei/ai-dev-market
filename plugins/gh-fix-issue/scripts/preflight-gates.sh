@@ -35,13 +35,22 @@ usage() {
   echo "使い方: preflight-gates.sh [--base <ref>]" >&2
 }
 
-BASE_REF="${GH_FIX_ISSUE_BASE_BRANCH:-main}"
+BASE_REF="${GH_FIX_ISSUE_BASE_BRANCH:-}"
 if [ "$#" -eq 0 ]; then
   :
 elif [ "$#" -eq 2 ] && [ "$1" = "--base" ] && [ -n "$2" ]; then
   BASE_REF="$2"
 else
   usage
+  exit "$EXIT_ERROR"
+fi
+
+# base を決め打ちしない（"main" にフォールバックしない）。既定ブランチが develop の
+# リポジトリで main を base として扱うと、差分の基準がずれたまま lint 判定が通る。
+# 解決できないなら、間違った基準で判定するより止める。
+if [ -z "$BASE_REF" ]; then
+  echo "base ブランチを解決できませんでした。" >&2
+  echo "--base <ref> で明示するか、設定 GH_FIX_ISSUE_BASE_BRANCH を指定してください。" >&2
   exit "$EXIT_ERROR"
 fi
 
@@ -167,6 +176,8 @@ if [ "$ran" -eq 0 ] && [ -z "$skipped" ]; then
   fi
   echo "警告: このリポジトリにはゲートが設定されていないため、ビルドもテストも lint も実行していません。" >&2
   echo "設定するには <リポジトリルート>/.claude/gh-fix-issue.config.sh を作成してください。" >&2
+  echo "雛形をコピーして始められます:" >&2
+  echo "  cp \"${GH_FIX_ISSUE_PRESET_DIR:-<plugin>/presets}/gh-fix-issue.config.sh.example\" .claude/gh-fix-issue.config.sh" >&2
   exit "$EXIT_OK"
 fi
 

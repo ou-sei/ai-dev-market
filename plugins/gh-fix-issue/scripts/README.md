@@ -94,7 +94,9 @@ push 前のゲート。設定されたゲートを順に実行し、途中で失
 （すべての不合格を集める）。
 
 ```bash
-preflight-gates.sh [--base <ref>]   # 引数なしなら base は設定の GH_FIX_ISSUE_BASE_BRANCH（既定 main）
+preflight-gates.sh [--base <ref>]   # 引数なしなら base は設定の GH_FIX_ISSUE_BASE_BRANCH
+                                    # 設定が無ければ origin/HEAD → gh repo view で解決
+                                    # 解決できなければ exit 1（main に決め打たない）
 ```
 
 **`<リポジトリルート>/.claude/gh-fix-issue.gates.sh` があれば、それに委譲して終了コードを

@@ -57,10 +57,24 @@ Issue 番号 `$ARGUMENTS` を起点に、PR 作成まで一気通貫で実行す
 
 **この出力をユーザーに提示する。** どの設定で動くのかを、実装を始める前に見せるため。
 
-`config` が「なし」の場合、そのリポジトリには設定ファイルが無い。既定値
-（base=`main`、ゲート無し、Projects 更新なし）で動くので、**ビルドもテストも走らない**。
-それでよいか判断できないときは、ここで停止して確認する。設定ファイルの雛形は
-`${CLAUDE_PLUGIN_ROOT}/scripts/gh-fix-issue-config.sh` の冒頭コメントにある。
+`config` が「なし」の場合、そのリポジトリには設定ファイルが無い。**ゲートが 1 つも
+無いので、ビルドもテストも lint も一度も走らないまま PR まで進む。** それでよいか
+判断できないときは、ここで停止して確認する。
+
+`base` は決め打ちしない。設定が指定していなければ `refs/remotes/origin/HEAD` →
+`gh repo view` の順で既定ブランチを解決する。**どちらからも取れなければ空になり、
+ゲートは実行エラーで止まる**（間違った base で判定しないため）。空だった場合は
+`--base` で明示するか設定に書く。
+
+設定ファイルを作るなら雛形をコピーする。
+
+```bash
+mkdir -p .claude && cp "${CLAUDE_PLUGIN_ROOT}/presets/gh-fix-issue.config.sh.example" \
+  .claude/gh-fix-issue.config.sh
+```
+
+Gradle / Android のリポジトリなら、雛形に全部書くよりプリセットを読んで差分だけ
+上書きするほうが短い（`presets/android-gradle.sh`。使い方は雛形の冒頭コメント）。
 
 以降の手順に出てくる `$GH_FIX_ISSUE_*` と `$BRANCH` は、ここで読み込んだ値を指す。
 **同じシェル呼び出しの中で使うか、都度読み直すこと**（Bash ツールの呼び出しをまたぐと
@@ -453,9 +467,9 @@ grep -n '<[^>]*>' .git/gh-fix-issue/pr-body.md   # 何も出なければ埋め�
 <変更が呼び出されている箇所。無ければその旨>
 
 ### セルフテスト項目
-- [x] assembleQaDebug: <ステップ6の実際の出力に基づく結果>
-- [x] testqaReleaseUnitTest: <同上>
-- [x] ktlint（追加行）: <同上。PREFLIGHT_SKIP_KTLINT でスキップした場合は「スキップ（未検証）」と明記する>
+- [x] <ゲート名（設定の GH_FIX_ISSUE_GATES に並んでいるもの）>: <ステップ6の実際の出力に基づく結果>
+- [x] <2つ目のゲート名>: <同上>
+- [x] lint（追加行）: <同上。PREFLIGHT_SKIP_KTLINT でスキップした場合は「スキップ（未検証）」と明記する>
 
 ### レビュアーへのコメント（特にレビューしてほしい観点や迷ったところなど）
 - Codex レビュー: <N> 周実行。対応した指摘（critical / high）: <件数>

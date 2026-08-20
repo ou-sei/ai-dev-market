@@ -55,5 +55,7 @@ jobs:
           status=0
           while IFS= read -r f; do
             bash -n "$f" || status=1
-          done < <(find . -name '*.sh' -not -path './.git/*')
+          # 雛形（*.sh.example）も対象にする。コピーして使うものなので、
+          # 壊れていると利用者側で初めて気づくことになる。
+          done < <(find . \( -name '*.sh' -o -name '*.sh.example' \) -not -path './.git/*')
           exit $status

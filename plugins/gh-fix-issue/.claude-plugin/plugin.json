@@ -1,6 +1,6 @@
 {
   "name": "gh-fix-issue",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "GitHub Issue 番号 1 つで、Issue 取得から PR 作成までを通す。",
   "author": {
     "name": "ou-sei"

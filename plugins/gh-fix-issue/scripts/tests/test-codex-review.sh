@@ -163,3 +163,72 @@ rm -f "$fake_task_companion" "$fake_failing_companion"
 rm -rf "$DISCUSS_FINDINGS_DIR"
 
 rm -rf "$GH_FIX_ISSUE_TEST_FINDINGS_DIR"
+
+# ---- モデル指定 (--model / GH_FIX_ISSUE_CODEX_MODEL) ----
+# companion はモデルを選べるが、スクリプトが渡していなかったため
+# ~/.codex/config.toml の既定が使えないアカウントでは
+# --round も --discuss も model_not_found で落ちていた。
+
+MODEL_COMPANION="$(mktemp)"
+# 受け取った引数をそのまま出して終わるフェイク
+printf '#!/usr/bin/env node\nconsole.log(process.argv.slice(2).join(" "));\n' > "$MODEL_COMPANION"
+
+check_out="$(CODEX_COMPANION="$MODEL_COMPANION" \
+  bash "$SCRIPTS_DIR/codex-review.sh" --check 2>&1)"
+assert_contains "$check_out" "未指定" "--check はモデル未指定であることを示す"
+
+check_out="$(CODEX_COMPANION="$MODEL_COMPANION" \
+  bash "$SCRIPTS_DIR/codex-review.sh" --check --model gpt-5.6-sol 2>&1)"
+assert_contains "$check_out" "gpt-5.6-sol" "--check は --model で渡したモデルを示す"
+
+check_out="$(CODEX_COMPANION="$MODEL_COMPANION" GH_FIX_ISSUE_CODEX_MODEL=from-env \
+  bash "$SCRIPTS_DIR/codex-review.sh" --check 2>&1)"
+assert_contains "$check_out" "from-env" "環境変数 GH_FIX_ISSUE_CODEX_MODEL が効く"
+
+check_out="$(CODEX_COMPANION="$MODEL_COMPANION" GH_FIX_ISSUE_CODEX_MODEL=from-env \
+  bash "$SCRIPTS_DIR/codex-review.sh" --check --model from-flag 2>&1)"
+assert_contains "$check_out" "from-flag" "--model は環境変数より優先される"
+
+# --discuss は companion にモデルを渡す
+MODEL_FINDINGS_DIR="$(mktemp -d)"
+discuss_out="$(CODEX_COMPANION="$MODEL_COMPANION" \
+  GH_FIX_ISSUE_FINDINGS_DIR="$MODEL_FINDINGS_DIR" \
+  bash "$SCRIPTS_DIR/codex-review.sh" --discuss "問い" --model gpt-5.6-sol 2>/dev/null)"
+assert_contains "$discuss_out" "--model gpt-5.6-sol" "--discuss は companion に --model を渡す"
+
+discuss_out="$(CODEX_COMPANION="$MODEL_COMPANION" \
+  GH_FIX_ISSUE_FINDINGS_DIR="$MODEL_FINDINGS_DIR" \
+  bash "$SCRIPTS_DIR/codex-review.sh" --discuss "問い" 2>/dev/null)"
+case "$discuss_out" in
+  *--model*) assert_eq "渡さない" "渡した" "モデル未指定なら --model を渡さない" ;;
+  *)         assert_eq "渡さない" "渡さない" "モデル未指定なら --model を渡さない" ;;
+esac
+
+# モデルを弾かれたときは、どこを直せばよいかを出す
+MODEL_REJECT_COMPANION="$(mktemp)"
+printf '%s\n' '#!/usr/bin/env node' \
+  'console.error("{\"error\":{\"code\":\"model_not_found\"}}");' \
+  'process.exit(1);' > "$MODEL_REJECT_COMPANION"
+reject_out="$(CODEX_COMPANION="$MODEL_REJECT_COMPANION" \
+  GH_FIX_ISSUE_FINDINGS_DIR="$MODEL_FINDINGS_DIR" \
+  bash "$SCRIPTS_DIR/codex-review.sh" --discuss "問い" --model dead-model 2>&1)"
+assert_contains "$reject_out" "dead-model" "弾かれたモデル名を示す"
+assert_contains "$reject_out" "GH_FIX_ISSUE_CODEX_MODEL" "毎回渡さずに済む方法を示す"
+
+# フラグの順番に依存しない
+assert_eq "0" "$(CODEX_REVIEW_FIXTURE="$TESTS_DIR/fixtures/review-clean.json" \
+  CODEX_COMPANION="/dev/null" \
+  GH_FIX_ISSUE_FINDINGS_DIR="$GH_FIX_ISSUE_TEST_FINDINGS_DIR" \
+  bash "$SCRIPTS_DIR/codex-review.sh" --model m --round 1 --base develop >/dev/null 2>&1; echo $?)" \
+  "--model を先に書いても --round が成立する"
+
+# 値を伴わないフラグは使い方を出して 1
+bash "$SCRIPTS_DIR/codex-review.sh" --round 1 --base develop --model >/dev/null 2>&1
+assert_eq "1" "$?" "--model に値が無ければ 1"
+bash "$SCRIPTS_DIR/codex-review.sh" --round 1 >/dev/null 2>&1
+assert_eq "1" "$?" "--base が無ければ 1"
+bash "$SCRIPTS_DIR/codex-review.sh" --round abc --base develop >/dev/null 2>&1
+assert_eq "1" "$?" "--round が数値でなければ 1"
+
+rm -f "$MODEL_COMPANION" "$MODEL_REJECT_COMPANION"
+rm -rf "$MODEL_FINDINGS_DIR"

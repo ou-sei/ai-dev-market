@@ -25,10 +25,18 @@
 Codex レビューを1周実行し、対応必須の指摘があるかを終了コードで返す。
 
 ```bash
-codex-review.sh --check                  # Codex が使えるかだけ確認する
+codex-review.sh --check                  # Codex が使えるかと、使うモデルを確認する
 codex-review.sh --round <N> --base <ref> # レビューを1周実行する
 codex-review.sh --discuss <message>      # 指摘に反論して見解を求める（ラウンドを消費しない）
+
+# モデルを指定する（--round / --discuss のどちらにも付けられる。位置は問わない）
+codex-review.sh --round 1 --base develop --model <モデル名>
 ```
+
+**`~/.codex/config.toml` の既定モデルが使えるとは限らない。** プランによっては弾かれ、
+`model_not_found` でレビューもディスカッションも落ちる。`codex exec` では通るのに
+この経路（app-server）では弾かれる組み合わせがあるので、既定が動いていることを
+根拠にしない。弾かれたときは、どこを直せばよいかを stderr に出す。
 
 `openai-codex/codex` プラグインの共有ランタイム（`codex-companion.mjs adversarial-review`）を
 経由して Codex を呼ぶ。プラグインの場所は `CODEX_COMPANION` → バージョン glob の順で解決し、
@@ -79,6 +87,7 @@ Codex は前の文脈を持たないので、**指摘の全文と該当コード
 | 変数 | 用途 | 未設定時 |
 |---|---|---|
 | `CODEX_COMPANION` | `codex-companion.mjs` のパスを固定する | `~/.claude/plugins/cache/openai-codex/codex/*/scripts/codex-companion.mjs` のうち最新版 |
+| `GH_FIX_ISSUE_CODEX_MODEL` | Codex に使わせるモデル。`--model` が優先。リポジトリの `.claude/gh-fix-issue.config.sh` にも書ける | 未指定（Codex 側の既定に任せる） |
 | `GH_FIX_ISSUE_FINDINGS_DIR` | findings の保存先を変える | `<repo-root>/.git/gh-fix-issue` |
 | `CODEX_REVIEW_FIXTURE` | **テスト専用。** Codex を呼ばず、指定した JSON を判定結果として使う | 未使用（実際に Codex を呼ぶ） |
 | `CODEX_REVIEW_DISABLE_GLOB` | **テスト専用。** `CODEX_COMPANION` が不正なとき glob へフォールバックさせない | フォールバックする |

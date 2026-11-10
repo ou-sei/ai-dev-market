@@ -2,8 +2,8 @@
 # Codex レビューを1周実行し、対応必須の指摘の有無を終了コードで返す。
 #
 #   codex-review.sh --check
-#   codex-review.sh --round <N> --base <ref>
-#   codex-review.sh --discuss <message>
+#   codex-review.sh --round <N> --base <ref> [--model <model>]
+#   codex-review.sh --discuss <message> [--model <model>]
 #
 # 終了コード:
 #   0  対応必須(critical/high)なし / --discuss が応答を得た
@@ -21,6 +21,7 @@
 #
 # 環境変数（詳細は .claude/scripts/README_ja.md）:
 #   CODEX_COMPANION            codex-companion.mjs のパスを固定する
+#   GH_FIX_ISSUE_CODEX_MODEL   Codex に使わせるモデル（--model が優先）
 #   GH_FIX_ISSUE_FINDINGS_DIR   findings の保存先を変える
 #   CODEX_REVIEW_FIXTURE       テスト専用。Codex を呼ばず固定 JSON を判定結果に使う
 #   CODEX_REVIEW_DISABLE_GLOB  テスト専用。companion の glob フォールバックを止める
@@ -58,11 +59,13 @@ cmd_check() {
     return "$EXIT_UNAVAILABLE"
   fi
   echo "codex companion: $companion"
+  echo "model          : ${CODEX_MODEL:-（未指定。Codex 側の既定を使う）}"
   return "$EXIT_CLEAN"
 }
 
 # スクリプトはリポジトリ外（~/.claude/scripts/）に置かれるため、位置からリポジトリルートを
 # 求めることはできない。設定ローダーが git に問い合わせて解決する。
+CODEX_MODEL_FROM_ENV="${GH_FIX_ISSUE_CODEX_MODEL:-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 . "$SCRIPT_DIR/gh-fix-issue-config.sh"
@@ -70,6 +73,11 @@ if ! load_gh_fix_issue_config; then
   exit 1
 fi
 REPO_ROOT="$GH_FIX_ISSUE_REPO_ROOT"
+
+# **モデルの決まり方: --model > 環境変数 > リポジトリ設定 > 指定しない。**
+# 設定ローダーが既定値で上書きしてしまうので、環境変数は読み込みより前に退避する。
+# 空のままなら Codex 側の既定（~/.codex/config.toml）に任せる。
+CODEX_MODEL="${CODEX_MODEL_FROM_ENV:-${GH_FIX_ISSUE_CODEX_MODEL:-}}"
 
 # レビュー基準はリポジトリごとに異なる。設定で指定されたファイルを使い、
 # 無指定なら汎用的な観点にフォールバックする。
@@ -96,6 +104,48 @@ FALLBACK
 }
 
 FOCUS_TEXT="$(build_focus_text)"
+
+# companion 呼び出し。モデルを指定するかどうかで引数が変わるので一箇所にまとめる。
+# 配列で組み立てると bash 3.2 (macOS 既定) の `set -u` で空配列が落ちるため、分岐で書く。
+companion_review() {
+  local companion="$1" base="$2"
+  if [ -n "$CODEX_MODEL" ]; then
+    node "$companion" adversarial-review --wait --base "$base" --scope branch \
+      --model "$CODEX_MODEL" "$FOCUS_TEXT"
+  else
+    node "$companion" adversarial-review --wait --base "$base" --scope branch "$FOCUS_TEXT"
+  fi
+}
+
+companion_task() {
+  local companion="$1" message="$2"
+  if [ -n "$CODEX_MODEL" ]; then
+    node "$companion" task --fresh --model "$CODEX_MODEL" "$message"
+  else
+    node "$companion" task --fresh "$message"
+  fi
+}
+
+# **モデルが弾かれたときは、そうと分かる形で伝える。**
+# 素の出力は "model_not_found" としか言わず、どこを直せばよいか分からない。
+explain_model_failure() {
+  local text="$1"
+  case "$text" in
+    *model_not_found*|*"is not supported when using Codex"*) ;;
+    *) return 0 ;;
+  esac
+  local tried="${CODEX_MODEL:-(指定なし。~/.codex/config.toml の既定)}"
+  {
+    echo
+    echo "Codex がモデルを受け付けませんでした: $tried"
+    echo "  プランで使えるモデル名を --model で渡してください。"
+    echo "    codex-review.sh --round <N> --base <ref> --model <モデル名>"
+    echo "  毎回渡さずに済ませるなら、環境変数 GH_FIX_ISSUE_CODEX_MODEL か"
+    echo "  リポジトリの .claude/gh-fix-issue.config.sh に書けます。"
+    echo "  **~/.codex/config.toml の既定が使えるとは限りません。**"
+    echo "  codex exec では通るのにレビュー経路では弾かれる組み合わせがあります。"
+  } >&2
+}
 
 # result --json の出力から verdict と findings を併せ持つオブジェクトを再帰探索して取り出す
 extract_review() {
@@ -199,10 +249,16 @@ cmd_round() {
     fi
 
     echo "Codex レビュー ラウンド $round/$MAX_ROUNDS (base=$base) を実行中..." >&2
-    if ! node "$companion" adversarial-review --wait --base "$base" --scope branch "$FOCUS_TEXT" >&2; then
+    # 進行は流しっぱなしにしつつ、失敗時に中身を見られるよう控えておく。
+    local review_log
+    review_log="$(mktemp)"
+    if ! companion_review "$companion" "$base" 2>&1 | tee "$review_log" >&2; then
+      explain_model_failure "$(cat "$review_log" 2>/dev/null)"
+      rm -f "$review_log"
       echo "Codex レビューの実行に失敗しました。" >&2
       return "$EXIT_ERROR"
     fi
+    rm -f "$review_log"
 
     if ! result_json="$(node "$companion" result --json 2>/dev/null)"; then
       echo "Codex の結果取得に失敗しました。" >&2
@@ -262,8 +318,9 @@ cmd_discuss() {
   echo "Codex にディスカッションを依頼中（レビューのラウンドは消費しません）..." >&2
 
   local out
-  if ! out="$(node "$companion" task --fresh "$message" 2>&1)"; then
+  if ! out="$(companion_task "$companion" "$message" 2>&1)"; then
     printf '%s\n' "$out" >&2
+    explain_model_failure "$out"
     echo "Codex への問い合わせに失敗しました。" >&2
     return "$EXIT_ERROR"
   fi
@@ -294,34 +351,61 @@ cmd_discuss() {
   return "$EXIT_CLEAN"
 }
 
+usage() {
+  echo "usage: codex-review.sh --check" >&2
+  echo "       codex-review.sh --round <N> --base <ref> [--model <model>]" >&2
+  echo "       codex-review.sh --discuss <message> [--model <model>]" >&2
+}
+
+# フラグの順番に依存しないで読む。--model をどこに書いても効くようにするため。
 main() {
-  case "${1:-}" in
-    --check)
+  local cmd="" round="" base="" message=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --check)
+        cmd="check"; shift ;;
+      --round)
+        cmd="round"
+        if [ $# -lt 2 ]; then usage; return "$EXIT_ERROR"; fi
+        round="$2"; shift 2 ;;
+      --base)
+        if [ $# -lt 2 ]; then usage; return "$EXIT_ERROR"; fi
+        base="$2"; shift 2 ;;
+      --discuss)
+        cmd="discuss"
+        if [ $# -lt 2 ]; then usage; return "$EXIT_ERROR"; fi
+        message="$2"; shift 2 ;;
+      --model)
+        if [ $# -lt 2 ]; then usage; return "$EXIT_ERROR"; fi
+        CODEX_MODEL="$2"; shift 2 ;;
+      *)
+        usage; return "$EXIT_ERROR" ;;
+    esac
+  done
+
+  case "$cmd" in
+    check)
       cmd_check
       return $?
       ;;
-    --discuss)
-      cmd_discuss "${2:-}"
+    discuss)
+      cmd_discuss "$message"
       return $?
       ;;
-    --round)
-      local round="${2:-}" base=""
-      if [ "${3:-}" = "--base" ]; then
-        base="${4:-}"
-      fi
+    round)
       if [ -z "$round" ] || [ -z "$base" ]; then
-        echo "usage: codex-review.sh --round <N> --base <ref>" >&2
+        usage
         return "$EXIT_ERROR"
       fi
       if ! [[ "$round" =~ ^[0-9]+$ ]]; then
-        echo "usage: codex-review.sh --round <N> --base <ref> (N は数値)" >&2
+        echo "--round は数値で指定してください: '$round'" >&2
         return "$EXIT_ERROR"
       fi
       cmd_round "$round" "$base"
       return $?
       ;;
     *)
-      echo "usage: codex-review.sh --check | --round <N> --base <ref> | --discuss <message>" >&2
+      usage
       return "$EXIT_ERROR"
       ;;
   esac

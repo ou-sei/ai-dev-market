@@ -48,6 +48,10 @@ load_gh_fix_issue_config() {
   GH_FIX_ISSUE_FOCUS_FILE=""
   # Codex に読ませる規約ファイル（空白区切り）
   GH_FIX_ISSUE_REVIEW_DOCS=""
+  # Codex に使わせるモデル。空なら Codex 側の既定（~/.codex/config.toml）に任せる。
+  # **既定が使えるとは限らない。** プランによっては弾かれるモデルがあり、
+  # その場合レビューもディスカッションも model_not_found で落ちる。
+  GH_FIX_ISSUE_CODEX_MODEL=""
 
   local config="$GH_FIX_ISSUE_REPO_ROOT/.claude/gh-fix-issue.config.sh"
   if [ -f "$config" ]; then

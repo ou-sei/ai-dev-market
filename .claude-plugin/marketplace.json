@@ -9,7 +9,7 @@
     {
       "name": "gh-fix-issue",
       "description": "GitHub Issue 番号 1 つで、Issue 取得 → 実装 → セルフレビュー → Codex レビュー → ゲート → PR 作成 までを通す。",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": { "name": "ou-sei" },
       "source": "./plugins/gh-fix-issue"
     },
